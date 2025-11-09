@@ -1,5 +1,6 @@
 # Development directory (for LLM/agent use)
 dev/
+AGENTS.md
 
 # Dependencies
 node_modules/

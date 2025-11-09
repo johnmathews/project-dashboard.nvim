@@ -16,7 +16,7 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim):
 
 ```lua
 {
-  'your-username/project-dashboard.nvim',
+  'johnmathews/project-dashboard.nvim',
   dependencies = {
     'nvim-lua/plenary.nvim',
     'nvim-tree/nvim-web-devicons'
