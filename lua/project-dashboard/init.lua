@@ -16,9 +16,9 @@ local default_config = {
   -- Tile configuration
   tiles = {
     enabled = true,
-    width = 40, -- tile width in characters
+    width = 45, -- tile width in characters
     height = 12, -- tile height in lines
-    gap = 2, -- gap between tiles
+    gap = 3, -- gap between tiles
     order = {
       'project_info',
       'file_stats', 
@@ -163,7 +163,11 @@ function M.get_git_info()
         -- Handle both SSH and HTTPS URLs:
         -- SSH: git@github.com:owner/repo.git
         -- HTTPS: https://github.com/owner/repo.git
-        local owner, repo = url:match('github%.com[:/](%w+)/([^/]+)%.git')
+        local owner, repo = url:match('github%.com[:/]([^/]+)/([^/]+)%.git')
+        if not owner and url:match('github%.com') then
+          -- Try without .git extension
+          owner, repo = url:match('github%.com[:/]([^/]+)/([^/%.]+)')
+        end
         if owner and repo then
           git_info.github_owner = owner
           git_info.github_repo = repo:gsub('%.git$', '')

@@ -41,16 +41,26 @@ function M.get_git_stats_async(callback)
       for line in remotes_output:gmatch('[^\r\n]+') do
         local name, url = line:match('^(%S+)%s+(%S+)')
         if name and url then
-          table.insert(stats.remotes, { name = name, url = url })
-          
-          -- Extract owner and repo from GitHub URL
-          if url:match('github%.com') then
-            local owner, repo = url:match('github%.com[:/][^/]+/([^/]+)/([^/]+)%.git')
-            if owner and repo then
-              stats.owner = owner
-              stats.repo_name = repo:gsub('%.git$', '')
-            end
-          end
+      table.insert(stats.remotes, { name = name, url = url })
+      
+      -- Extract owner and repo from GitHub URL
+      if url:match('github%.com') then
+        stats.has_github_remote = true
+        -- Handle both SSH and HTTPS URLs:
+        -- SSH: git@github.com:owner/repo.git
+        -- HTTPS: https://github.com/owner/repo.git
+        local owner, repo = url:match('github%.com[:/]([^/]+)/([^/]+)%.git')
+        if not owner and url:match('github%.com') then
+          -- Try without .git extension
+          owner, repo = url:match('github%.com[:/]([^/]+)/([^/%.]+)')
+        end
+        if owner and repo then
+          stats.owner = owner
+          stats.repo_name = repo:gsub('%.git$', '')
+          stats.github_owner = owner
+          stats.github_repo = repo:gsub('%.git$', '')
+        end
+      end
         end
       end
     end
@@ -126,10 +136,20 @@ function M.get_git_stats()
         
         -- Extract owner and repo from GitHub URL
         if url:match('github%.com') then
-          local owner, repo = url:match('github%.com[:/][^/]+/([^/]+)/([^/]+)%.git')
+          stats.has_github_remote = true
+          -- Handle both SSH and HTTPS URLs:
+          -- SSH: git@github.com:owner/repo.git
+          -- HTTPS: https://github.com/owner/repo.git
+          local owner, repo = url:match('github%.com[:/]([^/]+)/([^/]+)%.git')
+          if not owner and url:match('github%.com') then
+            -- Try without .git extension
+            owner, repo = url:match('github%.com[:/]([^/]+)/([^/%.]+)')
+          end
           if owner and repo then
             stats.owner = owner
             stats.repo_name = repo:gsub('%.git$', '')
+            stats.github_owner = owner
+            stats.github_repo = repo:gsub('%.git$', '')
           end
         end
       end

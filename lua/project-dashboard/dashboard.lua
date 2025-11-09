@@ -42,6 +42,9 @@ function M.open()
   vim.api.nvim_win_set_option(win, 'wrap', false)
   vim.api.nvim_win_set_option(win, 'cursorline', true)
 
+  -- Set up syntax highlighting
+  M.setup_highlights(buf)
+
   -- Set up keymaps to close dashboard
   vim.api.nvim_buf_set_keymap(buf, 'n', 'q', '', {
     callback = function()
@@ -159,13 +162,21 @@ function M.generate_dashboard_content(dashboard_data, config)
   -- Header (centered)
   local title = '📊 PROJECT DASHBOARD'
   local box_width = 65
-  local title_padding = string.rep(' ', math.floor((box_width - #title) / 2))
-  local centered_title = '│' .. title_padding .. title .. title_padding .. '│'
+  local title_display_width = vim.fn.strdisplaywidth(title)
+  local padding_needed = box_width - title_display_width
+  local left_padding = math.floor(padding_needed / 2)
+  local right_padding = padding_needed - left_padding
+  local centered_title = '│' .. string.rep(' ', left_padding) .. title .. string.rep(' ', right_padding) .. '│'
+  
+  -- Center the entire title box in the window
+  local window_width = vim.o.columns - 10
+  local box_left_margin = math.floor((window_width - (box_width + 2)) / 2)
+  local margin = string.rep(' ', box_left_margin)
   
   table.insert(content, '')
-  table.insert(content, '┌' .. string.rep('─', box_width) .. '┐')
-  table.insert(content, centered_title)
-  table.insert(content, '└' .. string.rep('─', box_width) .. '┘')
+  table.insert(content, margin .. '┌' .. string.rep('─', box_width) .. '┐')
+  table.insert(content, margin .. centered_title)
+  table.insert(content, margin .. '└' .. string.rep('─', box_width) .. '┘')
   table.insert(content, '')
 
   -- Check if tiles are enabled
@@ -325,6 +336,97 @@ function M.generate_fallback_content(dashboard_data)
   end
 
   return content
+end
+
+-- Setup syntax highlighting for dashboard
+function M.setup_highlights(buf)
+  -- Define custom highlight groups
+  vim.api.nvim_set_hl(0, 'DashboardTitle', { fg = '#61afef', bold = true }) -- Blue
+  vim.api.nvim_set_hl(0, 'DashboardHeader', { fg = '#565f89' }) -- Dark gray
+  vim.api.nvim_set_hl(0, 'DashboardFooter', { fg = '#565f89' }) -- Dark gray
+  vim.api.nvim_set_hl(0, 'DashboardTileTitle', { fg = '#e0af68', bold = true }) -- Yellow
+  vim.api.nvim_set_hl(0, 'DashboardTileSeparator', { fg = '#414868' }) -- Medium gray
+  vim.api.nvim_set_hl(0, 'DashboardKey', { fg = '#9ece6a' }) -- Green
+  vim.api.nvim_set_hl(0, 'DashboardValue', { fg = '#c0caf5' }) -- Light blue
+  vim.api.nvim_set_hl(0, 'DashboardLoading', { fg = '#f7768e', bold = true }) -- Red
+  vim.api.nvim_set_hl(0, 'DashboardSuccess', { fg = '#9ece6a' }) -- Green
+  vim.api.nvim_set_hl(0, 'DashboardWarning', { fg = '#e0af68' }) -- Yellow
+  vim.api.nvim_set_hl(0, 'DashboardError', { fg = '#f7768e' }) -- Red
+  vim.api.nvim_set_hl(0, 'DashboardLanguage', { fg = '#bb9af7' }) -- Purple
+  vim.api.nvim_set_hl(0, 'DashboardProgress', { fg = '#7aa2f7' }) -- Blue
+  vim.api.nvim_set_hl(0, 'DashboardGitHub', { fg = '#7aa2f7' }) -- Blue
+
+  -- Apply highlights using buffer API (more reliable)
+  vim.defer_fn(function()
+    if not vim.api.nvim_buf_is_valid(buf) then return end
+    
+    local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+    for i, line in ipairs(lines) do
+      -- Header and footer
+      if line:match('📊 PROJECT DASHBOARD') then
+        vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardTitle', i-1, 0, -1)
+      elseif line:match('^[│┌└─]') then
+        vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardHeader', i-1, 0, -1)
+      elseif line:match('^Press') then
+        vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardFooter', i-1, 0, -1)
+      
+      -- Tile titles and separators
+      elseif line:match('^[│├┤] [^│]*[│├┤]$') and not line:match('─') then
+        vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardTileTitle', i-1, 0, -1)
+      elseif line:match('^[│├┤] [─ ]*[│├┤]$') then
+        vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardTileSeparator', i-1, 0, -1)
+      
+      -- Key-value pairs
+      elseif line:match('^[│├┤] [^:]*:') then
+        local key_end = line:find(':')
+        vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardKey', i-1, 0, key_end)
+        vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardValue', i-1, key_end, -1)
+      
+      -- Special values
+      elseif line:match('Loading') then
+        local start = line:find('Loading')
+        if start then
+          vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardLoading', i-1, start-1, -1)
+        end
+      elseif line:match('✓') then
+        local start = line:find('✓')
+        if start then
+          vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardSuccess', i-1, start-1, start)
+        end
+      elseif line:match('⭐') or line:match('🍴') or line:match('🐙') or line:match('🐛') then
+        for emoji in line:gmatch('[⭐🍴🐙🐛]') do
+          local start = line:find(emoji)
+          if start then
+            vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardGitHub', i-1, start-1, start)
+          end
+        end
+      
+      -- Languages
+      elseif line:match('%a+') then
+        for lang in line:gmatch('%a+') do
+          if lang:match('Lua') or lang:match('Python') or lang:match('JavaScript') or 
+             lang:match('TypeScript') or lang:match('Markdown') or lang:match('Shell') or
+             lang:match('JSON') or lang:match('Go') or lang:match('Rust') or 
+             lang:match('Java') or lang:match('Ruby') or lang:match('PHP') or 
+             lang:match('CSS') or lang:match('HTML') then
+            local start = line:find(lang)
+            if start then
+              vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardLanguage', i-1, start-1, start+#lang-1)
+            end
+          end
+        end
+      
+      -- Progress bars
+      elseif line:match('[█▓▒░]') then
+        for bar in line:gmatch('[█▓▒░]+') do
+          local start = line:find(bar)
+          if start then
+            vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardProgress', i-1, start-1, start+#bar-1)
+          end
+        end
+      end
+    end
+  end, 50)
 end
 
 return M
