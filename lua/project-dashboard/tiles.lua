@@ -1,5 +1,26 @@
 local M = {}
 
+-- Border character sets
+local border_chars = {
+  rounded = {
+    top_left = '╭',
+    top_right = '╮',
+    bottom_left = '╰',
+    bottom_right = '╯',
+    horizontal = '─',
+    vertical = '│'
+  },
+  square = {
+    top_left = '┌',
+    top_right = '┐',
+    bottom_left = '└',
+    bottom_right = '┘',
+    horizontal = '─',
+    vertical = '│'
+  }
+}
+
+
 -- Tile rendering functions
 local tile_renderers = {}
 
@@ -247,6 +268,10 @@ function M.render_tiled_content(layout, config)
   local gap_x = tiles_config.gap_x or tiles_config.gap or 3
   local gap_y = tiles_config.gap_y or 1
   
+  -- Get border style
+  local border_style = tiles_config.border_style or 'rounded'
+  local borders = border_chars[border_style] or border_chars.rounded
+  
   -- Find maximum row
   for _, tile in ipairs(layout) do
     max_row = math.max(max_row, tile.row)
@@ -271,7 +296,7 @@ function M.render_tiled_content(layout, config)
       if i > 1 then
         top_border = top_border .. string.rep(' ', gap_x)
       end
-      top_border = top_border .. '┌' .. string.rep('─', tile.width - 2) .. '┐'
+      top_border = top_border .. borders.top_left .. string.rep(borders.horizontal, tile.width - 2) .. borders.top_right
     end
     table.insert(lines, top_border)
     
@@ -302,7 +327,7 @@ function M.render_tiled_content(layout, config)
           tile_line = tile_line .. string.rep(' ', content_width - display_width)
         end
         
-        row_line = row_line .. '│ ' .. tile_line .. ' │'
+        row_line = row_line .. borders.vertical .. ' ' .. tile_line .. ' ' .. borders.vertical
       end
       
       table.insert(lines, row_line)
@@ -314,7 +339,7 @@ function M.render_tiled_content(layout, config)
       if i > 1 then
         bottom_border = bottom_border .. string.rep(' ', gap_x)
       end
-      bottom_border = bottom_border .. '└' .. string.rep('─', tile.width - 2) .. '┘'
+      bottom_border = bottom_border .. borders.bottom_left .. string.rep(borders.horizontal, tile.width - 2) .. borders.bottom_right
     end
     table.insert(lines, bottom_border)
     

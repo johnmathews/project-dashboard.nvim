@@ -49,7 +49,7 @@ function M.open()
   vim.api.nvim_win_set_option(win, 'cursorline', true)
 
   -- Set up syntax highlighting
-  M.setup_highlights(buf)
+  M.setup_highlights(buf, config)
 
   -- Set up keymaps to close dashboard
   vim.api.nvim_buf_set_keymap(buf, 'n', 'q', '', {
@@ -359,7 +359,7 @@ function M.generate_fallback_content(dashboard_data)
 end
 
 -- Setup syntax highlighting for dashboard
-function M.setup_highlights(buf)
+function M.setup_highlights(buf, config)
   -- Define custom highlight groups
   vim.api.nvim_set_hl(0, 'DashboardTitle', { fg = '#61afef', bold = true }) -- Blue
   vim.api.nvim_set_hl(0, 'DashboardHeader', { fg = '#565f89' }) -- Dark gray
@@ -375,29 +375,34 @@ function M.setup_highlights(buf)
   vim.api.nvim_set_hl(0, 'DashboardLanguage', { fg = '#bb9af7' }) -- Purple
   vim.api.nvim_set_hl(0, 'DashboardProgress', { fg = '#7aa2f7' }) -- Blue
   vim.api.nvim_set_hl(0, 'DashboardGitHub', { fg = '#7aa2f7' }) -- Blue
+  vim.api.nvim_set_hl(0, 'DashboardTileBackground', { bg = '#1a1b26' }) -- Dark background for tiles
 
   -- Apply highlights using buffer API (more reliable)
   vim.defer_fn(function()
     if not vim.api.nvim_buf_is_valid(buf) then return end
     
     local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+    
+    -- Get tile background config
+    local background_enabled = config.tiles and config.tiles.background
     for i, line in ipairs(lines) do
+    
       -- Header and footer
       if line:match('📊') then
         vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardTitle', i-1, 0, -1)
-      elseif line:match('^[│┌└─]') then
+      elseif line:match('^[│┌└╭╮╰╯─]') then
         vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardHeader', i-1, 0, -1)
       elseif line:match('^Press') then
         vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardFooter', i-1, 0, -1)
       
       -- Tile titles and separators
-      elseif line:match('^[│├┤] [^│]*[│├┤]$') and not line:match('─') then
+      elseif line:match('^[│├┤╭╮╰╯┌└] [^│]*[│├┤]$') and not line:match('─') then
         vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardTileTitle', i-1, 0, -1)
-      elseif line:match('^[│├┤] [─ ]*[│├┤]$') then
+      elseif line:match('^[│├┤╭╮╰╯┌└] [─ ]*[│├┤]$') then
         vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardTileSeparator', i-1, 0, -1)
       
       -- Key-value pairs
-      elseif line:match('^[│├┤] [^:]*:') then
+      elseif line:match('^[│├┤╭╮╰╯┌└] [^:]*:') then
         local key_end = line:find(':')
         vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardKey', i-1, 0, key_end)
         vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardValue', i-1, key_end, -1)
@@ -444,6 +449,11 @@ function M.setup_highlights(buf)
             vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardProgress', i-1, start-1, start+#bar-1)
           end
         end
+      end
+      
+      -- Apply tile background if enabled
+      if background_enabled and (line:match('^%s*[│╭╮╰╯]') or line:match('^%s*[┌┐└┘]')) then
+        vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardTileBackground', i-1, 0, -1)
       end
     end
   end, 50)

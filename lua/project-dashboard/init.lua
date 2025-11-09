@@ -25,6 +25,8 @@ local default_config = {
 		height = 12, -- tile height in lines
 		gap_x = 3, -- horizontal gap between tiles
 		gap_y = 1, -- vertical gap between tile rows
+		border_style = 'rounded', -- 'rounded' or 'square'
+		background = true, -- enable background color for tiles
 		order = {
 			"project_info",
 			"file_stats",
