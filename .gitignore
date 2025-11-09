@@ -1,0 +1,45 @@
+# Neovim plugin
+*.vim
+*.lua
+!lua/project-dashboard/
+!plugin/
+
+# Dependencies
+node_modules/
+plenary.nvim/
+nvim-web-devicons/
+
+# Test files
+test-*.lua
+dashboard-output.txt
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Build artifacts
+build/
+dist/
+
+# Package manager files
+package-lock.json
+yarn.lock
+
+# Neovim specific
+*.session
+.viminfo
+.netrwhist
