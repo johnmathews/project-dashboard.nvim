@@ -6,11 +6,14 @@ function M.open()
   
   local config = require('project-dashboard').config
   
+  -- Get project name from current directory
+  local project_name = vim.fn.fnamemodify(vim.fn.getcwd(), ':t')
+  
   -- Create a new buffer immediately
   local buf = vim.api.nvim_create_buf(false, true)
   
   -- Set buffer name
-  vim.api.nvim_buf_set_name(buf, 'Project Dashboard')
+  vim.api.nvim_buf_set_name(buf, 'Dashboard: ' .. project_name)
   
   -- Set buffer options with error handling
   local success, err = pcall(function()
@@ -37,7 +40,7 @@ function M.open()
     row = margin_y,
     border = 'rounded',
     style = 'minimal',
-    title = ' Project Dashboard ',
+    title = ' 📊 ' .. project_name .. ' ',
     title_pos = 'center',
   })
 
@@ -67,6 +70,7 @@ function M.open()
 
   -- Store data for updates
   local dashboard_data = {
+    project_name = project_name,
     file_stats = { loading = true, progress = 0 },
     git_stats = { loading = true },
     github_info = nil,
@@ -180,7 +184,7 @@ function M.generate_dashboard_content(dashboard_data, config)
   local content = {}
   
   -- Header (centered)
-  local title = '📊 PROJECT DASHBOARD'
+  local title = '📊 ' .. (dashboard_data.project_name or 'PROJECT DASHBOARD'):upper()
   local box_width = 65
   local title_display_width = vim.fn.strdisplaywidth(title)
   local padding_needed = box_width - title_display_width
@@ -379,7 +383,7 @@ function M.setup_highlights(buf)
     local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
     for i, line in ipairs(lines) do
       -- Header and footer
-      if line:match('📊 PROJECT DASHBOARD') then
+      if line:match('📊') then
         vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardTitle', i-1, 0, -1)
       elseif line:match('^[│┌└─]') then
         vim.api.nvim_buf_add_highlight(buf, -1, 'DashboardHeader', i-1, 0, -1)
