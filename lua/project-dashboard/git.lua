@@ -90,7 +90,7 @@ function M.get_git_stats_async(callback)
       local contributors_output = vim.fn.system(contributors_cmd)
       if vim.v.shell_error == 0 then
         for line in contributors_output:gmatch('[^\r\n]+') do
-          local count, author = line:match('^(%d+)%s+(.+)$')
+          local count, author = line:match('%s*(%d+)%s+(.+)$')
           if count and author then
             table.insert(stats.contributors, {
               name = author,
@@ -180,7 +180,7 @@ function M.get_git_stats()
   local contributors_output = vim.fn.system(contributors_cmd)
   if vim.v.shell_error == 0 then
     for line in contributors_output:gmatch('[^\r\n]+') do
-      local count, author = line:match('^(%d+)%s+(.+)$')
+      local count, author = line:match('%s*(%d+)%s+(.+)$')
       if count and author then
         table.insert(stats.contributors, {
           name = author,
