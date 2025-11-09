@@ -1,17 +1,10 @@
-# Neovim plugin
-*.vim
-*.lua
-!lua/project-dashboard/
-!plugin/
+# Development directory (for LLM/agent use)
+dev/
 
 # Dependencies
 node_modules/
 plenary.nvim/
 nvim-web-devicons/
-
-# Test files
-test-*.lua
-dashboard-output.txt
 
 # OS files
 .DS_Store

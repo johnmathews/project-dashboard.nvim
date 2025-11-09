@@ -26,12 +26,15 @@ function M.open()
   end
 
   -- Create window immediately
+  local margin_x = config.layout and config.layout.margin_x or 8
+  local margin_y = config.layout and config.layout.margin_y or 1
+  
   local win = vim.api.nvim_open_win(buf, true, {
     relative = 'editor',
-    width = vim.o.columns - 10,
-    height = vim.o.lines - 10,
-    col = 5,
-    row = 5,
+    width = vim.o.columns - (margin_x * 2),
+    height = vim.o.lines - (margin_y * 2),
+    col = margin_x,
+    row = margin_y,
     border = 'rounded',
     style = 'minimal',
     title = ' Project Dashboard ',
@@ -144,6 +147,23 @@ function M.update_dashboard_content(dashboard_data, config)
     -- Buffer was likely replaced by session loading, stop updating
     return
   end
+  
+  -- Resize window to fit content (don't show excessive blank space)
+  local margin_x = config.layout and config.layout.margin_x or 8
+  local margin_y = config.layout and config.layout.margin_y or 1
+  local content_height = #content
+  local max_height = vim.o.lines - (margin_y * 2)
+  
+  -- Use exact content height (the border adds visual padding)
+  local window_height = math.min(content_height, max_height)
+  
+  vim.api.nvim_win_set_config(win, {
+    relative = 'editor',
+    width = vim.o.columns - (margin_x * 2),
+    height = window_height,
+    col = margin_x,
+    row = margin_y,
+  })
 
   -- Show timing if everything is loaded
   if config.show_timing and 
@@ -169,7 +189,8 @@ function M.generate_dashboard_content(dashboard_data, config)
   local centered_title = '│' .. string.rep(' ', left_padding) .. title .. string.rep(' ', right_padding) .. '│'
   
   -- Center the entire title box in the window
-  local window_width = vim.o.columns - 10
+  local margin_x = config.layout and config.layout.margin_x or 8
+  local window_width = vim.o.columns - (margin_x * 2)
   local box_left_margin = math.floor((window_width - (box_width + 2)) / 2)
   local margin = string.rep(' ', box_left_margin)
   
@@ -184,12 +205,7 @@ function M.generate_dashboard_content(dashboard_data, config)
     -- Use tiled layout
     local tiles = require('project-dashboard.tiles')
     local layout = tiles.create_tiled_layout(dashboard_data, config)
-    local tiled_content = tiles.render_tiled_content(
-      layout, 
-      config.tiles.width, 
-      config.tiles.height, 
-      config.tiles.gap
-    )
+    local tiled_content = tiles.render_tiled_content(layout, config)
     
     -- Add tiled content to main content
     for _, line in ipairs(tiled_content) do
